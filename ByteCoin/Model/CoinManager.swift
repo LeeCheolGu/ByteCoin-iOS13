@@ -10,7 +10,7 @@ import Foundation
 import CoreLocation
 
 protocol CoinManagerDelegate {
-    func didUpdateCoin(_ coinManager: CoinManager)
+    func didUpdateCoin(price: String, currency: String)
     func didFailWithError(error: Error)
 }
 
@@ -24,7 +24,6 @@ struct CoinManager {
 
     func getCoinPrice(for currency: String) {
         //1. Creat a URL
-        
         let urlString = "\(baseURL)/\(currency)?apikey=\(apiKey)"
         if let url = URL(string: urlString) {
             //2. Creat a URLSession
@@ -36,7 +35,10 @@ struct CoinManager {
                     return
                 }
                 if let safeData = data {
-                    let bitcoinPrice = self.parseJSON(safeData)
+                    if let bitcoinPrice = self.parseJSON(safeData) {
+                        let priceString = String(format: "%.2f", bitcoinPrice)
+                        self.delegate?.didUpdateCoin(price: priceString, currency: currency)
+                    }
                 }
             }
             //4. Start the task
@@ -45,7 +47,6 @@ struct CoinManager {
     }
     func parseJSON(_ data: Data) -> Double? {
         let decoder = JSONDecoder()
-        
         do{
             let decodeData = try decoder.decode(CoinData.self, from: data)
             let lastPrice = decodeData.rate
